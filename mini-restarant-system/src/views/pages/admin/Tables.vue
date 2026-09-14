@@ -30,7 +30,12 @@
                                 <p class="text-lg font-extrabold leading-tight">{{ table.table_number }}</p>
                             </div>
                         </div>
-                        <span class="badge badge-green">Available</span>
+                        <span class="badge"
+                                :class="table.status === 'inActive' ? 'badge-red' : 'badge-green'">
+                                <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full"
+                                    :class="table.status === 'inActive' ? 'bg-red-500' : 'bg-emerald-500'"></span>
+                                {{ table.status === 'inActive' ? 'Occupied' : 'Available' }}
+                            </span>
                     </div>
                     <div class="mt-3 flex gap-4 text-xs text-slate-300">
                         <span class="flex items-center gap-1.5">
@@ -174,7 +179,8 @@ const deleteTable = async (id: number) => {
 };
 
 const printQr = async (table: Table) => {
-    const qrUrl = `https://alternative-cds-stock-acer.trycloudflare.com/menu/${table.qr_token}`;
+    const qrUrl = `http://localhost:5173/menu/${table.qr_token}`;
+    // const qrUrl = "http://localhost:5173/menu/${}"
     const qrImage = await QRCode.toDataURL(qrUrl);
 
     const win = window.open('', '_blank', 'width=420,height=620');

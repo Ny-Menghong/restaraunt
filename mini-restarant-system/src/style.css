@@ -183,6 +183,42 @@ body {
     animation: pulseSoft 2s ease-in-out infinite;
 }
 
+/* ---------- Toasts ---------- */
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateX(24px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+@keyframes toastProgress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+.toast-enter-active {
+    animation: toastIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+.toast-leave-active {
+    position: absolute;
+    right: 0;
+    width: 100%;
+    animation: toastIn 0.3s ease-in reverse both;
+}
+.toast-move {
+    transition: transform 0.3s ease;
+}
+.toast-progress {
+    animation: toastProgress linear forwards;
+    border-bottom-left-radius: 999px;
+}
+
 /* Stagger helper */
 .stagger > * {
     animation: fadeUp 0.45s ease both;

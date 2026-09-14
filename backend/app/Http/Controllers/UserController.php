@@ -8,9 +8,13 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::all();
+        $query = User::query();
+        if ($request->has('status')) {
+            $query->where('status', $request->get('status'));
+        }
+        $users = $query->get();
         return response()->json([
             'success' => true,
             'users' => $users
@@ -27,9 +31,13 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role' => 'sometimes|in:admin,manager,cashier',
+            'status' => 'sometimes|in:active,inActive',
         ]);
         if (empty($validated['role'])) {
             $validated['role'] = 'cashier';
+        }
+        if (empty($validated['status'])) {
+            $validated['status'] = 'active';
         }
         $validated['password'] = Hash::make($validated['password']);
         $user = User::create($validated);
@@ -58,6 +66,7 @@ class UserController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:6',
             'role' => 'sometimes|in:admin,manager,cashier',
+            'status' => 'sometimes|in:active,inActive',
         ]);
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);

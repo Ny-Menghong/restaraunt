@@ -9,9 +9,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-        allowedHosts: [
-            'taxation-permanent-character-defining.trycloudflare.com'
-        ]
-    }
+        allowedHosts: true
+  }
 })
 

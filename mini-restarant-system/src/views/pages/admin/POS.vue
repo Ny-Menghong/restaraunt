@@ -47,10 +47,11 @@
                     <div class="flex items-center gap-4">
                         <div
                             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 font-extrabold text-white shadow-md shadow-emerald-600/20">
-                            {{ order.order_number.split('-').pop() }}
+                            <!-- {{ orderLabel(order) }} -->
+                              ORD
                         </div>
                         <div>
-                            <h3 class="font-extrabold tracking-tight text-slate-900">{{ order.order_number }}</h3>
+                            <h3 class="font-extrabold tracking-tight text-slate-900">{{ orderLabel(order) }}</h3>
                             <p class="text-xs text-slate-500">
                                 <span class="badge badge-slate">{{ order.order_type === 'dine_in' ? 'Dine In' : 'Takeaway' }}</span>
                                 <span v-if="order.table" class="ml-1"> Table {{ order.table.table_number }}</span>
@@ -107,15 +108,48 @@
         <div v-if="payingOrder" class="modal-backdrop">
             <div class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm" @click="closePay"></div>
             <div class="modal-card relative z-50 max-h-[90vh] overflow-y-auto animate-fade-up">
-                <div class="mb-5 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Collect Payment</h2>
-                        <p class="text-xs text-slate-400">{{ payingOrder.order_number }} &middot; {{ payingOrder.order_type === 'dine_in' ? 'Dine In' : 'Takeaway' }}</p>
+                <!-- Payment Success -->
+                <template v-if="paymentSuccess">
+                    <div class="flex flex-col items-center justify-center px-2 py-10 text-center">
+                        <div
+                            class="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-lg shadow-emerald-500/30">
+                            <CheckCircle2 class="h-10 w-10" />
+                        </div>
+                        <h2 class="mt-6 text-2xl font-extrabold tracking-tight text-slate-900">Congratulations!</h2>
+                        <p class="mt-1 text-sm text-slate-500">Payment received successfully</p>
+
+                        <div class="mt-6 w-full max-w-xs rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-slate-500">Order</span>
+                                <span class="font-bold text-slate-900">{{ orderLabel(payingOrder) }}</span>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between text-sm">
+                                <span class="text-slate-500">Method</span>
+                                <span class="font-bold capitalize text-slate-900">{{ paymentMethod }}</span>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between border-t border-dashed border-slate-200 pt-2 text-base font-extrabold">
+                                <span class="text-slate-900">Total</span>
+                                <span class="text-emerald-600">${{ Number(payingOrder.total).toFixed(2) }}</span>
+                            </div>
+                        </div>
+
+                        <button @click="closePay" class="btn btn-primary mt-7 w-full max-w-xs py-3">
+                            Done
+                        </button>
                     </div>
-                    <button @click="closePay" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
-                        <X class="h-5 w-5" />
-                    </button>
-                </div>
+                </template>
+
+                <!-- Payment form -->
+                <template v-else>
+                    <div class="mb-5 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-extrabold tracking-tight text-slate-900">Collect Payment</h2>
+                            <p class="text-xs text-slate-400">{{ orderLabel(payingOrder) }} &middot; {{ payingOrder.order_type === 'dine_in' ? 'Dine In' : 'Takeaway' }}</p>
+                        </div>
+                        <button @click="closePay" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
+                            <X class="h-5 w-5" />
+                        </button>
+                    </div>
 
                 <div class="space-y-4">
                     <div class="rounded-2xl bg-slate-50 p-4">
@@ -145,12 +179,9 @@
                         <label class="label">Payment Method</label>
                         <select v-model="paymentMethod" @change="resetBakong" class="input">
                             <option value="cash">Cash</option>
-                            <option value="aba">ABA</option>
-                            <option value="acleda">ACLEDa</option>
                             <option value="bakong">Bakong</option>
                         </select>
                     </div>
-
                     <!-- Bakong QR flow -->
                     <div v-if="paymentMethod === 'bakong'" class="rounded-2xl border border-slate-100 p-4 text-center">
                         <template v-if="!bakongQrImage">
@@ -209,6 +240,7 @@
                         </div>
                     </template>
                 </div>
+                </template>
             </div>
         </div>
     </div>
@@ -220,6 +252,7 @@ import { Search, ChevronDown, RefreshCw, CreditCard, CheckCircle2, X, Utensils, 
 import QRCode from 'qrcode';
 import { ordersService } from '../../../services/orders';
 import { bakongService } from '../../../services/bakong';
+import { orderLabel } from '../../../utils/order';
 import api from '../../../api/axios';
 
 interface OrderItem {
@@ -255,6 +288,7 @@ const payingOrder = ref<Order | null>(null);
 const paymentMethod = ref('cash');
 const processing = ref(false);
 const payError = ref('');
+const paymentSuccess = ref(false);
 
 const bakongMd5 = ref('');
 const bakongQrImage = ref('');
@@ -271,7 +305,7 @@ const filteredOrders = computed(() => {
         const q = searchQuery.value.toLowerCase();
         if (!q) return true;
         const tableNo = o.table?.table_number ? 'table ' + o.table.table_number.toLowerCase() : '';
-        return o.order_number.toLowerCase().includes(q) || tableNo.includes(q);
+        return o.order_number.toLowerCase().includes(q) || tableNo.includes(q) || orderLabel(o).toLowerCase().includes(q);
     });
 });
 
@@ -288,6 +322,7 @@ const formatDate = (date: string) => {
 const fetchOrders = async () => {
     loading.value = true;
     try {
+        // const response = await ordersService.orders({});
         const response = await ordersService.orders({});
         orders.value = response.orders;
     } catch (e) {
@@ -301,6 +336,7 @@ const openPay = (order: Order) => {
     payingOrder.value = order;
     paymentMethod.value = order.payment?.payment_method || 'cash';
     payError.value = '';
+    paymentSuccess.value = false;
     resetBakong();
 };
 
@@ -323,6 +359,7 @@ const closePay = () => {
     payingOrder.value = null;
     processing.value = false;
     payError.value = '';
+    paymentSuccess.value = false;
     resetBakong();
 };
 
@@ -383,8 +420,8 @@ const processPayment = async (method?: string) => {
             payingOrder.value.payment.status = 'paid';
             payingOrder.value.payment.payment_method = chosen;
         }
-        payingOrder.value.status = 'completed';
-        closePay();
+        payingOrder.value.status = 'confirmed';
+        paymentSuccess.value = true;
         await fetchOrders();
     } catch (e: any) {
         throw e;

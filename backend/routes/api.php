@@ -11,6 +11,7 @@ use App\Http\Controllers\QRMenuController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserRequestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -36,40 +37,50 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 Route::get('/qr/{table:qr_token}', [QRMenuController::class, 'show'])->name('show');
 Route::get('/foods', [FoodController::class, 'index'])->name('foods.index');
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+Route::post('/orders/{order}/items', [OrderController::class, 'addItems'])->name('orders.addItems');
+Route::middleware(['auth:sanctum','role:admin'])->group(function (){
+    Route::get('/ilovu',function(){
+        return 'love u';
+    });
+
+});
 // =====================
 // Authenticated routes
 // =====================
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
+    // Profile
+    Route::get('/profile', [AuthController::class, 'profile'])->name('profile.show');
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
     // Users
     Route::get('/users', [UserController::class, 'index'])->name('user.index');
     Route::post('/users', [UserController::class, 'store'])->name('user.store');
     Route::get('/users/{user}', [UserController::class, 'show'])->name('user.show');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('user.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('user.destroy');
-
     // Tables
     Route::get('/tables', [TableController::class, 'index'])->name('tables.index');
     Route::post('/tables', [TableController::class, 'store'])->name('tables.store');
     Route::get('/tables/{table}', [TableController::class, 'show'])->name('tables.show');
     Route::put('/tables/{table}', [TableController::class, 'update'])->name('tables.update');
     Route::delete('/tables/{table}', [TableController::class, 'destroy'])->name('tables.destroy');
-
     // Categories
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    
+
+
 
     // Foods (admin create/update/delete, public index above)
     Route::post('/foods', [FoodController::class, 'store'])->name('foods.store');
     Route::get('/foods/{food}', [FoodController::class, 'show'])->name('foods.show');
     Route::put('/foods/{food}', [FoodController::class, 'update'])->name('foods.update');
     Route::delete('/foods/{food}', [FoodController::class, 'destroy'])->name('foods.destroy');
-
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
     // Payments
@@ -84,6 +95,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
     Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    // User Requests
+    Route::get('/user_requests', [UserRequestController::class, 'index'])->name('user_requests.index');
+    Route::post('/user_requests', [UserRequestController::class, 'store'])->name('user_requests.store');
+    Route::get('/user_requests/{userRequest}', [UserRequestController::class, 'show'])->name('user_requests.show');
+    Route::put('/user_requests/{userRequest}', [UserRequestController::class, 'update'])->name('user_requests.update');
+    Route::delete('/user_requests/{userRequest}', [UserRequestController::class, 'destroy'])->name('user_requests.destroy');
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 });

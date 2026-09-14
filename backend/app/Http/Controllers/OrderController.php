@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Food;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Table;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -108,6 +109,9 @@ class OrderController extends Controller
                     'payment_method' => $validated['payment_method'] ?? 'cash',
                     'status' => 'pending',
                 ]);
+                if ($order->order_type === 'dine_in' && $order->table_id) {
+                    Table::where('id', $order->table_id)->update(['status' => 'inActive']);
+                }
                 return $order;
             });
             $order->load('items.food', 'table', 'payment', 'customer');
@@ -131,10 +135,76 @@ class OrderController extends Controller
         ]);
     }
 
+    public function addItems(Request $request, Order $order)
+    {
+        try {
+            $validated = $request->validate([
+                'items' => [
+                    'required',
+                    'array',
+                    'min:1',
+                ],
+                'items.*.food_id' => [
+                    'required',
+                    'exists:foods,id',
+                ],
+                'items.*.quantity' => [
+                    'required',
+                    'integer',
+                    'min:1',
+                ],
+            ]);
+
+            if ($order->status === 'confirmed') {
+                return response()->json([
+                    'message' => 'This order is already closed. Please place a new order.'
+                ], 422);
+            }
+
+            $order = DB::transaction(function () use ($order, $validated) {
+                $addedTotal = 0;
+                foreach ($validated['items'] as $item) {
+                    $food = Food::findOrFail($item['food_id']);
+                    $price = $food->price;
+                    $subtotal = $price * $item['quantity'];
+                    $order->items()->create([
+                        'food_id' => $food->id,
+                        'quantity' => $item['quantity'],
+                        'price' => $price,
+                        'subtotal' => $subtotal,
+                    ]);
+                    $addedTotal += $subtotal;
+                }
+                $order->subtotal += $addedTotal;
+                $order->total = $order->subtotal - $order->discount;
+                if ($order->total < 0) {
+                    $order->total = 0;
+                }
+                $order->save();
+                $payment = Payment::where('order_id', $order->id)->where('status', 'pending')->first();
+                if ($payment) {
+                    $payment->amount = $order->total;
+                    $payment->save();
+                }
+                return $order;
+            });
+            $order->load('items.food', 'table', 'payment', 'customer');
+            return response()->json([
+                'message' => 'Items added to your order successfully.',
+                'data' => $order,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to add items to order.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function update(Request $request, Order $order)
     {
         $validated = $request->validate([
-            'status' => 'nullable|in:pending,preparing,ready,completed,cancelled',
+            'status' => 'nullable|in:pending,confirmed',
             'discount' => 'nullable|numeric|min:0',
         ]);
         if (isset($validated['discount'])) {
@@ -153,7 +223,16 @@ class OrderController extends Controller
 
     public function destroy(Order $order)
     {
+        $tableId = $order->table_id;
         $order->delete();
+        if ($tableId) {
+            $open = Order::where('table_id', $tableId)
+                ->where('status', 'pending')
+                ->exists();
+            if (!$open) {
+                Table::where('id', $tableId)->update(['status' => 'active']);
+            }
+        }
         return response()->json([
             'success' => true,
             'message' => 'Order deleted successfully'

@@ -23,6 +23,14 @@ export const ordersService = {
         const response = await api.post('/orders', orderData);
         return response.data;
     },
+    async getOrder(orderId: number) {
+        const response = await api.get(`/orders/${orderId}`);
+        return response.data;
+    },
+    async addItems(orderId: number, items: { food_id: number; quantity: number }[]) {
+        const response = await api.post(`/orders/${orderId}/items`, { items });
+        return response.data;
+    },
     async deleteOrder(orderId: number) {
         const response = await api.delete(`/orders/${orderId}`);
         return response.data;

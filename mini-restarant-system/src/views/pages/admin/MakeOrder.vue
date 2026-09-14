@@ -27,8 +27,11 @@
             </div>
 
             <!-- Food Grid -->
+            <!-- <div v-if="loading" class="empty">
+                loading.
+            </div> -->
             <div v-if="filteredFoods.length === 0" class="empty">
-                No dishes match your search.
+                <div class="spin"></div>
             </div>
             <div v-else class="stagger grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                 <div v-for="food in filteredFoods" :key="food.id"
@@ -119,8 +122,8 @@
                     <div>
                         <select v-model="paymentMethod" class="input">
                             <option value="cash">Cash</option>
-                            <option value="aba">ABA</option>
-                            <option value="acleda">ACLEDa</option>
+                            <!-- <option value="aba">ABA</option>
+                            <option value="acleda">ACLEDa</option> -->
                             <option value="bakong">Bakong</option>
                         </select>
                     </div>
@@ -198,7 +201,7 @@ import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, X } from 'lucide-
 import { foodService } from '../../../services/foods';
 import { ordersService } from '../../../services/orders';
 import { categoiyService } from '../../../services/categories';
-
+import { useToast } from '../../../composables/useToast';
 interface Food {
     id: number;
     category_id: number;
@@ -224,8 +227,12 @@ const discount = ref(0);
 const paymentMethod = ref('cash');
 const ordering = ref(false);
 const mobileCartOpen = ref(false);
+const loading = ref(false);
+const toast = useToast();
+
 
 const filteredFoods = computed(() => {
+   
     return foods.value.filter(f => {
         if (!f.status) return false;
         if (searchQuery.value && !f.name.toLowerCase().includes(searchQuery.value.toLowerCase())) return false;
@@ -270,6 +277,7 @@ const clearCart = () => {
 };
 
 const placeOrder = async () => {
+    loading.value = true;
     if (!cartItems.value.length) return;
     ordering.value = true;
     try {
@@ -285,10 +293,11 @@ const placeOrder = async () => {
         });
         clearCart();
         mobileCartOpen.value = false;
-        alert('Takeaway order placed successfully!');
+        toast.success('Takeaway order placed successfully!', 'You can collect it from the counter.');
     } catch (e: any) {
-        alert(e.response?.data?.message || 'Failed to place order.');
+        toast.error('Failed to place order.', e.response?.data?.message || 'Please try again.');
     } finally {
+        loading.value = false;
         ordering.value = false;
     }
 };

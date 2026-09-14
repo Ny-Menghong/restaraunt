@@ -1,0 +1,1 @@
+export const orderLabel = (order: { id: number }) => `ORD-${order.id}`;

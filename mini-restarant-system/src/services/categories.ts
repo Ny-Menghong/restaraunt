@@ -5,12 +5,17 @@ export const categoiyService = {
         const response = await api.get('/categories');
         return response.data;
     },
-    async createCategory(data: { name: string; slug?: string; image?: string; description?: string; status?: boolean }) {
-        const response = await api.post('/categories', data);
+    async createCategory(data: FormData) {
+        const response = await api.post('/categories', data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
     },
-    async updateCategory(id: number, data: { name?: string; slug?: string; image?: string; description?: string; status?: boolean }) {
-        const response = await api.put(`/categories/${id}`, data);
+    async updateCategory(id: number, data: FormData) {
+        data.append('_method', 'PUT');
+        const response = await api.post(`/categories/${id}`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
     },
     async deleteCategory(id: number) {

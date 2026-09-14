@@ -16,6 +16,9 @@ import Users from "../views/pages/admin/Users.vue";
 import POS from "../views/pages/admin/POS.vue";
 import Reports from "../views/pages/admin/Reports.vue";
 import Payment from "../views/pages/admin/Payment.vue";
+import Request from "../views/pages/admin/Request.vue";
+import Profile from "../views/pages/admin/Profile.vue";
+import NotFound from "../views/NotFound.vue";
 
 const routes = [
     {
@@ -38,8 +41,10 @@ const routes = [
             { path: "categories", name: "categories", component: Categories },
             { path: "customers", name: "customers", component: Customers },
             { path: "payments", name: "payments", component: Payment },
+            { path: "requests", name: "retuests", component: Request },
             { path: "users", name: "users", component: Users },
             { path: "reports", name: "reports", component: Reports },
+            { path: "profile", name: "profile", component: Profile },
         ],
     },
     {
@@ -58,18 +63,27 @@ const routes = [
             guestOnly: true,
         },
     },
+    {
+        path: "/:pathMatch(.*)*",
+        name: "notfound",
+        component: NotFound
+    }
 ];
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes,
 });
+router.onError((error) => {
+    console.error('ROUTER ERROR:', error)
+    console.error(error.stack)
+})
 router.beforeEach((to) => {
     const auth = useAuthStor();
-    if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    if (to.meta.requiresAuth && (!auth.isAuthenticated || auth.user?.status !== 'active')) {
         return {
             name: "login",
         };
-    }
+    }   
     if (to.meta.guestOnly && auth.isAuthenticated) {
         return {
             name: "dashboard",

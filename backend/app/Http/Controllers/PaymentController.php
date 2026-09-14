@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Table;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -35,7 +36,17 @@ class PaymentController extends Controller
                 'status' => 'paid',
             ]);
         }
-        Order::where('id', $validated['order_id'])->update(['status' => 'completed']);
+        $order = Order::find($validated['order_id']);
+        $order->update(['status' => 'confirmed']);
+        if ($order->table_id) {
+            $open = Order::where('table_id', $order->table_id)
+                ->where('id', '!=', $order->id)
+                ->where('status', 'pending')
+                ->exists();
+            if (!$open) {
+                Table::where('id', $order->table_id)->update(['status' => 'active']);
+            }
+        }
         return response()->json([
             'success' => true,
             'message' => 'Payment successful',

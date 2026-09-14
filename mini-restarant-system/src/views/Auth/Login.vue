@@ -9,6 +9,7 @@ const auth = useAuthStor()
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const errorKind = ref<'invalid' | 'pending' | 'other'>('invalid')
 
 const submit = async () => {
     error.value = ''
@@ -16,7 +17,8 @@ const submit = async () => {
         await auth.login(email.value, password.value)
         router.push({ name: 'dashboard' })
     } catch (e: any) {
-        error.value = e.response?.data?.message || 'Login failed'
+        error.value = e.response?.data?.message || (e instanceof Error ? e.message : 'Login failed')
+        errorKind.value = e.response?.status === 403 ? 'pending' : (e.response?.status === 401 ? 'invalid' : 'other')
     }
 }
 </script>
@@ -107,7 +109,10 @@ const submit = async () => {
                         </div>
 
                         <div v-if="error"
-                            class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-600">
+                            :class="errorKind === 'pending'
+                                ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                : 'border-red-200 bg-red-50 text-red-600'"
+                            class="flex items-start gap-2 rounded-xl border px-3.5 py-2.5 text-sm">
                             {{ error }}
                         </div>
 

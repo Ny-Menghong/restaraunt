@@ -80,8 +80,27 @@
                         <input v-model="form.slug" type="text" placeholder="auto-generated" class="input" />
                     </div>
                     <div>
-                        <label class="label">Image URL</label>
-                        <input v-model="form.image" type="text" placeholder="https://..." class="input" />
+                        <label class="label">Image</label>
+                        <div class="flex items-start gap-4">
+                            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                <img v-if="imagePreview" :src="imagePreview" alt="Preview"
+                                    class="h-full w-full object-cover" />
+                                <div v-else class="flex h-full w-full items-center justify-center text-slate-300">
+                                    <ImageIcon class="h-6 w-6" />
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <label class="btn btn-soft w-full cursor-pointer px-4 py-2 text-center">
+                                    Choose image
+                                    <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
+                                </label>
+                                <p v-if="imageFile" class="mt-1.5 truncate text-xs text-slate-500">{{ imageFile.name }}</p>
+                                <button v-if="imagePreview || form.image" type="button" @click="clearImage"
+                                    class="mt-1.5 text-xs font-medium text-red-500 hover:underline">
+                                    Remove image
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="label">Description</label>
@@ -108,7 +127,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Plus, Pencil, Trash2, X, Tag } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, X, Tag, Image as ImageIcon } from 'lucide-vue-next';
 import { categoiyService } from '../../../services/categories';
 
 interface Category {
@@ -127,6 +146,9 @@ const showModal = ref(false);
 const submitting = ref(false);
 const editingId = ref<number | null>(null);
 const error = ref('');
+const imageFile = ref<File | null>(null);
+const imagePreview = ref('');
+const removeImage = ref(false);
 
 const form = ref({
     name: '',
@@ -136,10 +158,30 @@ const form = ref({
     status: true,
 });
 
+const onImageChange = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    imageFile.value = file;
+    removeImage.value = false;
+    if (imagePreview.value) URL.revokeObjectURL(imagePreview.value);
+    imagePreview.value = URL.createObjectURL(file);
+};
+
+const clearImage = () => {
+    imageFile.value = null;
+    if (imagePreview.value) URL.revokeObjectURL(imagePreview.value);
+    imagePreview.value = '';
+    if (editingId.value) removeImage.value = true;
+};
+
 const resetForm = () => {
     form.value = { name: '', slug: '', image: '', description: '', status: true };
     editingId.value = null;
     error.value = '';
+    imageFile.value = null;
+    imagePreview.value = '';
+    removeImage.value = false;
 };
 
 const openModal = (category?: Category) => {
@@ -153,6 +195,7 @@ const openModal = (category?: Category) => {
             description: category.description || '',
             status: category.status,
         };
+        imagePreview.value = category.image || '';
     }
     showModal.value = true;
 };
@@ -173,14 +216,17 @@ const submitForm = async () => {
     submitting.value = true;
     error.value = '';
     try {
-        const payload: any = { ...form.value };
-        if (!payload.slug) delete payload.slug;
-        if (!payload.image) delete payload.image;
-        if (!payload.description) delete payload.description;
+        const formData = new FormData();
+        formData.append('name', form.value.name);
+        if (form.value.slug) formData.append('slug', form.value.slug);
+        formData.append('status', form.value.status ? '1' : '0');
+        if (form.value.description) formData.append('description', form.value.description);
+        if (imageFile.value) formData.append('image', imageFile.value);
+        if (removeImage.value) formData.append('remove_image', '1');
         if (editingId.value) {
-            await categoiyService.updateCategory(editingId.value, payload);
+            await categoiyService.updateCategory(editingId.value, formData);
         } else {
-            await categoiyService.createCategory(payload);
+            await categoiyService.createCategory(formData);
         }
         showModal.value = false;
         await fetchCategories();

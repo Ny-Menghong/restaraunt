@@ -60,6 +60,34 @@
                 </div>
             </div>
 
+            <!-- Active order -->
+            <div v-if="currentOrder" class="mb-8 overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50">
+                <div class="flex flex-wrap items-center justify-between gap-4 p-5">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/30">
+                            <ShoppingBag class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <span class="badge badge-emerald">{{ orderLabel(currentOrder) }} in progress</span>
+                            <p class="mt-1 text-sm font-semibold text-emerald-700">
+                                Want more food? Keep adding — it goes on the same order.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Running total</p>
+                        <p class="text-2xl font-extrabold text-emerald-700">${{ currentOrderTotal.toFixed(2) }}</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 border-t border-emerald-100 px-5 py-3.5">
+                    <span v-for="item in currentOrder.items" :key="item.food_id"
+                        class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-emerald-100">
+                        <span class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">x{{ item.quantity }}</span>
+                        {{ item.food?.name || 'Food #' + item.food_id }}
+                    </span>
+                </div>
+            </div>
+
             <!-- Loading -->
             <div v-if="loading" class="flex flex-col items-center justify-center py-24">
                 <div class="spin"></div>
@@ -142,7 +170,9 @@
                         </div>
                         <div>
                             <h2 class="text-lg font-extrabold tracking-tight text-slate-900">Your Order</h2>
-                            <p class="text-xs text-slate-400">{{ cartItems.length }} item(s) in cart</p>
+                            <p class="text-xs text-slate-400">
+                                {{ currentOrder ? 'Adding to ' + orderLabel(currentOrder) : cartItems.length + ' item(s) in cart' }}
+                            </p>
                         </div>
                     </div>
                     <button @click="showCart = false" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
@@ -151,13 +181,46 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto p-5">
+                    <!-- Already ordered -->
+                    <div v-if="currentOrder?.items?.length" class="mb-6">
+                        <p class="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+                            <CheckCircle class="h-3.5 w-3.5" />
+                            Already ordered &middot; {{ currentOrder.items.length }} item(s)
+                        </p>
+                        <div class="divide-y divide-emerald-50 rounded-2xl bg-emerald-50/50 px-4">
+                            <div v-for="item in currentOrder.items" :key="item.id"
+                                class="flex items-center gap-3 py-3">
+                                <img v-if="item.food?.image" :src="item.food.image" :alt="item.food?.name"
+                                    class="h-11 w-11 shrink-0 rounded-xl object-cover" />
+                                <div v-else
+                                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-400">
+                                    <UtensilsCrossed class="h-5 w-5" />
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-bold text-slate-800">{{ item.food?.name || 'Food #' + item.food_id }}</p>
+                                    <p class="text-xs text-slate-400">${{ Number(item.price).toFixed(2) }}</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-lg bg-emerald-100 px-2 py-1 text-xs font-extrabold text-emerald-700">x{{ item.quantity }}</span>
+                                    <span class="w-16 text-right text-sm font-bold text-slate-700">${{ Number(item.subtotal).toFixed(2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- New items -->
+                    <p v-if="cartItems.length > 0" class="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Adding now &middot; {{ cartItems.length }} item(s)
+                    </p>
                     <div v-if="cartItems.length === 0"
                         class="flex flex-col items-center justify-center py-16 text-center">
                         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-300">
                             <ShoppingBag class="h-8 w-8" />
                         </div>
-                        <p class="text-sm font-bold text-slate-600">Your cart is empty</p>
-                        <p class="mt-1 text-xs text-slate-400">Add some delicious dishes!</p>
+                        <p class="text-sm font-bold text-slate-600">{{ currentOrder ? 'Add more delicious dishes!' : 'Your cart is empty' }}</p>
+                        <p class="mt-1 text-xs text-slate-400">
+                            {{ currentOrder ? 'Browse the menu and pick something new' : 'Add some delicious dishes!' }}
+                        </p>
                     </div>
                     <div v-else class="divide-y divide-slate-100">
                         <div v-for="(item, index) in cartItems" :key="item.food.id" class="flex items-center gap-4 py-4">
@@ -187,6 +250,10 @@
                 </div>
 
                 <div v-if="cartItems.length > 0" class="border-t border-slate-100 p-5">
+                    <div v-if="currentOrder" class="mb-2 flex items-center justify-between rounded-xl bg-emerald-50 px-3.5 py-2.5">
+                        <span class="text-xs font-semibold text-emerald-700">Current order total</span>
+                        <span class="text-sm font-extrabold text-emerald-700">${{ currentOrderTotal.toFixed(2) }}</span>
+                    </div>
                     <div class="mb-2 flex items-center justify-between text-sm text-slate-500">
                         <span>Subtotal</span>
                         <span class="text-xs text-slate-400">{{ cartItems.length }} items</span>
@@ -198,10 +265,10 @@
                     <button @click="placeOrder" :disabled="ordering" class="btn btn-primary mt-4 w-full py-3.5">
                         <span v-if="ordering">
                             <span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                            Placing Order...
+                            {{ currentOrder ? 'Updating Order...' : 'Placing Order...' }}
                         </span>
                         <template v-else>
-                            Place Order - ${{ cartTotal.toFixed(2) }}
+                            {{ currentOrder ? 'Add to Order' : 'Place Order' }} - ${{ cartTotal.toFixed(2) }}
                             <ArrowRight class="h-4 w-4" />
                         </template>
                     </button>
@@ -217,15 +284,19 @@ import { onMounted, ref, computed } from 'vue'
 import { tableService } from '../../../services/table'
 import { foodService } from '../../../services/foods'
 import { ordersService } from '../../../services/orders'
-import { ShoppingBag, ChefHat, QrCode, MapPin, Plus, Minus, X, ArrowRight, UtensilsCrossed } from 'lucide-vue-next'
+import { orderLabel } from '../../../utils/order'
+import { useToast } from '../../../composables/useToast'
+import { ShoppingBag, ChefHat, QrCode, MapPin, Plus, Minus, X, ArrowRight, UtensilsCrossed, CheckCircle } from 'lucide-vue-next'
 import type { Food } from '../../../models/food'
 
 const route = useRoute()
+const toast = useToast()
 const tableInfo = ref<any>(null)
 const foods = ref<Food[]>([])
 const loading = ref(true)
 const showCart = ref(false)
 const ordering = ref(false)
+const currentOrder = ref<any>(null)
 
 interface CartItem {
     food: Food;
@@ -237,6 +308,10 @@ const cartItems = ref<CartItem[]>([])
 const cartTotal = computed(() => {
     return cartItems.value.reduce((sum, item) => sum + Number(item.food.price) * item.quantity, 0)
 })
+
+const currentOrderTotal = computed(() => Number(currentOrder.value?.total ?? 0))
+
+const orderStorageKey = computed(() => `konoha_menu_order_${route.params.qr_token}`)
 
 const addToCart = (food: Food) => {
     const existing = cartItems.value.find(item => item.food.id === food.id)
@@ -259,21 +334,45 @@ const placeOrder = async () => {
     if (!cartItems.value.length) return
     ordering.value = true
     try {
-        await ordersService.createOrder({
-            table_id: tableInfo.value?.id || null,
-            order_type: 'dine_in',
-            items: cartItems.value.map(item => ({
-                food_id: item.food.id,
-                quantity: item.quantity,
-            })),
-        })
+        const itemPayload = cartItems.value.map(item => ({
+            food_id: item.food.id,
+            quantity: item.quantity,
+        }))
+        if (currentOrder.value) {
+            const response = await ordersService.addItems(currentOrder.value.id, itemPayload)
+            currentOrder.value = response.data
+            toast.success('Added to your order!', 'You can keep adding more anytime.')
+        } else {
+            const response = await ordersService.createOrder({
+                table_id: tableInfo.value?.id || null,
+                order_type: 'dine_in',
+                items: itemPayload,
+            })
+            localStorage.setItem(orderStorageKey.value, String(response.data.id))
+            currentOrder.value = response.data
+            toast.success('Order placed successfully!', 'You can add more food to your order anytime.')
+        }
         cartItems.value = []
         showCart.value = false
-        alert('Order placed successfully!')
     } catch (e) {
-        alert('Failed to place order. Please try again.')
+        toast.error('Failed to place order.', 'Please try again.')
     } finally {
         ordering.value = false
+    }
+}
+
+const loadCurrentOrder = async () => {
+    const savedId = localStorage.getItem(orderStorageKey.value)
+    if (!savedId) return
+    try {
+        const response = await ordersService.getOrder(Number(savedId))
+        if (response.success && response.order?.status !== 'confirmed') {
+            currentOrder.value = response.order
+        } else {
+            localStorage.removeItem(orderStorageKey.value)
+        }
+    } catch (e) {
+        localStorage.removeItem(orderStorageKey.value)
     }
 }
 
@@ -287,6 +386,7 @@ const fetchData = async () => {
         ])
         tableInfo.value = tableData.table
         foods.value = foodData.foods || []
+        await loadCurrentOrder()
     } catch (error) {
         console.error('Failed to fetch menu:', error)
     } finally {

@@ -17,10 +17,7 @@
                 <select v-model="statusFilter" @change="fetchOrders" class="input w-44 appearance-none pr-8">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <!-- <option value="preparing">Preparing</option> -->
-                    <option value="ready">Ready</option>
-                    <!-- <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option> -->
+                    <option value="confirmed">Confirmed</option>
                 </select>
                 <ChevronDown class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
@@ -45,10 +42,11 @@
                     <div class="flex items-center gap-4">
                         <div
                             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 font-extrabold text-white shadow-md">
-                            {{ order.order_number.split('-').pop() }}
+                            <!-- {{  }} -->
+                            ORD
                         </div>
                         <div>
-                            <h3 class="font-extrabold tracking-tight text-slate-900">{{ order.order_number }}</h3>
+                            <h3 class="font-extrabold tracking-tight text-slate-900">{{ orderLabel(order) }}</h3>
                             <p class="text-xs text-slate-500">
                                 {{ order.order_type === 'dine_in' ? 'Dine In' : 'Takeaway' }}
                                 <span v-if="order.table"> &middot; Table {{ order.table.table_number }}</span>
@@ -87,30 +85,21 @@
                         <span class="ml-2 font-bold text-slate-900">Total: ${{ Number(order.total).toFixed(2) }}</span>
                     </span>
                     <div class="flex flex-wrap gap-2">
-                        <button v-if="order.status === 'pending'"
-                            @click="updateStatus(order, 'preparing')" class="btn btn-dark px-3 py-2 text-xs">
-                            <ChefHat class="h-3.5 w-3.5" />
-                            Start Preparing
-                        </button>
-                        <button v-if="order.status === 'preparing'"
-                            @click="updateStatus(order, 'ready')" class="btn btn-primary px-3 py-2 text-xs">
-                            <CheckCircle2 class="h-3.5 w-3.5" />
-                            Mark Ready
-                        </button>
-                        <button v-if="order.status === 'ready' && order.payment?.status !== 'paid'"
-                            @click="processPayment(order)" class="btn px-3 py-2 text-xs bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500">
+                        <router-link v-if="order.status === 'pending' && order.payment?.status !== 'paid'"
+                            to="/pos"
+                            class="btn btn-primary px-3 py-1.5 text-xs">
                             <CreditCard class="h-3.5 w-3.5" />
                             Pay
-                        </button>
-                        <button v-if="order.status === 'ready'"
-                            @click="updateStatus(order, 'completed')" class="btn btn-primary px-3 py-2 text-xs">
+                        </router-link>
+                        <button v-if="order.status === 'pending'"
+                            @click="updateStatus(order, 'confirmed')" class="btn btn-dark px-3 py-2 text-xs">
                             <CircleCheck class="h-3.5 w-3.5" />
-                            Complete
+                            Confirm
                         </button>
-                        <button v-if="['pending', 'preparing'].includes(order.status)"
-                            @click="updateStatus(order, 'cancelled')" class="btn btn-ghost-danger px-3 py-2 text-xs">
-                            <XCircle class="h-3.5 w-3.5" />
-                            Cancel
+                        <button v-if="order.status === 'confirmed'"
+                            @click="updateStatus(order, 'pending')" class="btn btn-ghost px-3 py-2 text-xs">
+                            <RotateCcw class="h-3.5 w-3.5" />
+                            Mark Pending
                         </button>
                     </div>
                 </div>
@@ -121,9 +110,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { ChevronDown, RefreshCw, ChefHat, CheckCircle2, CircleCheck, CreditCard, XCircle } from 'lucide-vue-next';
+import { ChevronDown, RefreshCw, CircleCheck, CreditCard, RotateCcw } from 'lucide-vue-next';
 import { ordersService } from '../../../services/orders';
-import api from '../../../api/axios';
+import { orderLabel } from '../../../utils/order';
 
 interface OrderItem {
     id: number;
@@ -157,10 +146,7 @@ const typeFilter = ref('');
 const statusClass = (status: string) => {
     const classes: Record<string, string> = {
         pending: 'badge-yellow',
-        preparing: 'badge-blue',
-        ready: 'badge-emerald',
-        completed: 'badge-green',
-        cancelled: 'badge-red',
+        confirmed: 'badge-green',
     };
     return classes[status] || 'badge-slate';
 };
@@ -190,20 +176,6 @@ const updateStatus = async (order: Order, status: string) => {
         order.status = status;
     } catch (e) {
         console.error('Failed to update order:', e);
-    }
-};
-
-const processPayment = async (order: Order) => {
-    try {
-        await api.post('/payment', {
-            order_id: order.id,
-            amount: order.total,
-            payment_method: 'cash',
-        });
-        order.payment = { id: 0, status: 'paid', amount: order.total };
-        order.status = 'completed';
-    } catch (e) {
-        console.error('Failed to process payment:', e);
     }
 };
 

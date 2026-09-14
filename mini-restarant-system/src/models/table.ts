@@ -3,5 +3,6 @@ export interface Table{
     table_number:number,
     capacity:number,
     location:string,
-    qr_token : string
+    qr_token : string,
+    status?: string
 }

@@ -5,6 +5,7 @@ import {
     Menu, X, LayoutDashboard, ShoppingCart, ShoppingBag, NotebookTabs,
     Utensils, Tag, Grid3X3, Users, CreditCard,
     ChartSpline, LogOut, ChefHat,
+    BellRing, Pencil, UserRound,
 } from 'lucide-vue-next';
 import { useAuthStor } from '../stores/auth';
 
@@ -31,10 +32,11 @@ const menuItems = ref<MenuItem[]>([
 const managementItems = ref<MenuItem[]>([
     { title: 'Foods', to: '/foods', icon: Utensils, roles: ['admin', 'manager'] },
     { title: 'Categories', to: '/categories', icon: Tag, roles: ['admin', 'manager'] },
-    { title: 'Tables', to: '/table', icon: Grid3X3, roles: ['admin', 'manager', 'cashier'] },
+    { title: 'Tables', to: '/table', icon: Grid3X3, roles: ['admin', 'manager'] },
     { title: 'Customers', to: '/customers', icon: Users, roles: ['admin', 'manager'] },
 ]);
 const systemItems = ref<MenuItem[]>([
+    { title: 'Requests', to: '/requests', icon: BellRing, roles: ['admin','manager'] },
     { title: 'Users', to: '/users', icon: Users, roles: ['admin'] },
 ]);
 
@@ -86,13 +88,11 @@ const handleLogout = async () => {
 
             <!-- Logo -->
             <div class="relative flex h-20 items-center gap-3 border-b border-slate-100 px-6">
-                <div
+                <img width="50" src="https://www.clipartmax.com/png/full/258-2589171_free-high-quality-naruto-icon-image-konoha-symbol.png" alt="">
+                <!-- <div
                     class="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30">
                     <ChefHat class="h-6 w-6" />
-                    <!-- <span
-                        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-white">
-                    </span> -->
-                </div>
+                </div> -->
                 <div class="min-w-0">
                     <p class="text-base font-extrabold tracking-tight text-slate-900">Konoha</p>
                     <p class="truncate text-[11px] font-medium text-slate-400">Restaurant Management</p>
@@ -102,21 +102,9 @@ const handleLogout = async () => {
                     <X class="h-5 w-5" />
                 </button>
             </div>
-            <!-- User chip -->
-            <div class="relative px-4 pt-4">
-                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <img v-if="auth.user?.avatar" :src="auth.user.avatar" :alt="auth.user.name"
-                        class="h-10 w-10 rounded-xl object-cover ring-2 ring-emerald-500/30" />
-                    <div v-else
-                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-base font-extrabold text-white shadow-md shadow-emerald-500/20">
-                        {{ (auth.user?.name || 'A').charAt(0).toUpperCase() }}
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-bold text-slate-900">{{ auth.user?.name || 'Staff' }}</p>
-                        <p class="truncate text-[11px] font-medium capitalize text-emerald-600">{{ roleName(auth.user) || 'staff' }}</p>
-                    </div>
-                </div>
-            </div>
+            
+
+            
 
             <!-- Navigation -->
             <nav class="relative flex-1 overflow-y-auto px-3 py-4">
@@ -200,6 +188,24 @@ const handleLogout = async () => {
 
             <!-- Footer -->
             <div class="relative border-t border-slate-100 p-4">
+            <!-- User chip -->
+            <div class="relative px-2 pt-4">
+                <RouterLink to="/profile" @click="closeSidebar"
+                    class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:border-emerald-200 hover:bg-emerald-50/50">
+                    <img v-if="auth.user?.avatar" :src="auth.user.avatar" :alt="auth.user.name"
+                        class="h-10 w-10 rounded-xl object-cover ring-2 ring-emerald-500/30" />
+                    <div v-else
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-base font-extrabold text-white shadow-md shadow-emerald-500/20">
+                        {{ (auth.user?.name || 'A').charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-bold text-slate-900">{{ auth.user?.name || 'Staff' }}</p>
+                        <p class="truncate text-[11px] font-medium capitalize text-emerald-600">{{ roleName(auth.user) || 'staff' }}</p>
+                    </div>
+                    <Pencil class="h-3.5 w-3.5 shrink-0 text-slate-300" />
+                </RouterLink>
+            </div>
+                
                 <button @click="handleLogout"
                     class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-slate-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600">
                     <LogOut class="h-[18px] w-[18px] text-slate-400 transition-colors group-hover:text-red-500" />

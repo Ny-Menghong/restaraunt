@@ -1,6 +1,7 @@
 import axios from 'axios'
-// const baseURL:string = "https://oregon-editions-often-saint.trycloudflare.com";
+// import { useErrorStore } from '../stores/error';
 const baseURL:string = "http://127.0.0.1:8000";
+// const baseURL = "https://formal-cumulative-relatives-refurbished.trycloudflare.com";
 const api = axios.create({
     baseURL: `${baseURL}/api`,
     headers: {
@@ -15,9 +16,16 @@ api.interceptors.request.use((config) => {
     }
     return config
 })
+// const errorStore = useErrorStore();
 api.interceptors.response.use(
     (response) => response,
     (error) => {
+        // if(error.response?.status === 403){
+        //     errorStore.setError({status:403,message:"Forbidden"});
+        // }
+        // if(error.response?.status === 404){
+        //     errorStore.setError({status:404,message:"Forbidden"});
+        // }
         if (error.response?.status === 401) {
             localStorage.removeItem('token')
             localStorage.removeItem('user')

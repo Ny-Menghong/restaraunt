@@ -6,9 +6,7 @@
         </div>
         <p class="qr-title">Scan to Order</p>
         <p class="qr-hint">Scan this QR code with your phone to view the menu</p>
-        <div class="qr-token">
-            <span>{{ table.qr_token }}</span>
-        </div>
+        
     </div>
 </template>
 
@@ -22,8 +20,9 @@ const props = defineProps<{
 }>()
 
 const qrImage = ref('')
-// https://taxation-permanent-character-defining.trycloudflare.com
 const url = "http://localhost:5173";
+// const url = "https://insurance-councils-surge-plays.trycloudflare.com";
+// const url = "https://inspections-moms-edt-arms.trycloudflare.com";
 onMounted(async () => {
     qrImage.value = await QRCode.toDataURL(
         `${url}/menu/${props.table.qr_token}`

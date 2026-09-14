@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Traits\HandlesImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
+    use HandlesImage;
+
     public function index()
     {
         $categories = Category::with('products')->get();
@@ -19,12 +22,15 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:categories,slug',
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'description' => 'nullable|string',
             'status' => 'nullable|boolean',
         ]);
         if (empty($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['name']);
+        }
+        if ($request->hasFile('image')) {
+            $validated['image'] = $this->storeImage($request->file('image'), 'categories');
         }
         $category = Category::create($validated);
         return response()->json([
@@ -47,12 +53,20 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'slug' => 'nullable|string|unique:categories,slug,' . $category->id,
-            'image' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'description' => 'nullable|string',
             'status' => 'nullable|boolean',
         ]);
         if (isset($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['slug']);
+        }
+        if ($request->hasFile('image')) {
+            $this->deleteImageIfStored($category->getRawOriginal('image'));
+            $validated['image'] = $this->storeImage($request->file('image'), 'categories');
+        }
+        if ($request->has('remove_image')) {
+            $this->deleteImageIfStored($category->getRawOriginal('image'));
+            $validated['image'] = null;
         }
         $category->update($validated);
         return response()->json([
@@ -64,6 +78,7 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
+        $this->deleteImageIfStored($category->getRawOriginal('image'));
         $category->delete();
         return response()->json([
             'success' => true,

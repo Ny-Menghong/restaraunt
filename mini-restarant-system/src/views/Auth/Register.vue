@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStor } from '../../stores/auth'
-import { Mail, Lock, User, ArrowRight, ChefHat, UtensilsCrossed, VenetianMask } from 'lucide-vue-next'
+import { Mail, Lock, User, ArrowRight, ChefHat, UtensilsCrossed, VenetianMask, CheckCircle2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const auth = useAuthStor()
@@ -11,12 +11,17 @@ const gender = ref('male')
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const success = ref('')
 
 const submit = async () => {
     error.value = ''
+    success.value = ''
     try {
-        await auth.register(name.value, gender.value, email.value, password.value)
-        router.push({ name: 'dashboard' })
+        const response = await auth.register(name.value, gender.value, email.value, password.value)
+        success.value = response?.message || 'Account created successfully. Awaiting admin approval.'
+        setTimeout(() => {
+            router.push({ name: 'login' })
+        }, 2500)
     } catch (e: any) {
         error.value = e.response?.data?.message || e.response?.data?.errors?.email?.[0] || 'Register failed'
     }
@@ -86,7 +91,18 @@ const submit = async () => {
                     <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Create account</h2>
                     <p class="mt-1 text-sm text-slate-500">Join the Konoha staff</p>
 
-                    <form @submit.prevent="submit" class="mt-7 space-y-4">
+                    <div v-if="success" class="mt-7 flex flex-col items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-10 text-center">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white">
+                            <CheckCircle2 class="h-7 w-7" />
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-emerald-700">Account created!</p>
+                            <p class="mt-1 text-sm leading-relaxed text-emerald-600">{{ success }}</p>
+                        </div>
+                        <p class="text-xs text-emerald-600/70">Redirecting to sign in...</p>
+                    </div>
+
+                    <form v-else @submit.prevent="submit" class="mt-7 space-y-4">
                         <div>
                             <label class="label" for="name">Full Name</label>
                             <div class="relative">

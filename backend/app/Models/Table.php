@@ -14,7 +14,7 @@ class Table extends Model
         'capacity',
         'location',
         'qr_token',
-
+        'status',
     ];
     public function orders(): HasMany{
         return $this->hasMany(Order::class, 'table_id', 'id');

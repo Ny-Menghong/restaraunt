@@ -5,11 +5,15 @@ export const userService = {
         const response = await api.get('/users');
         return response.data;
     },
-    async createUser(data: { name: string; gender: string; email: string; password: string; role: string }) {
+    async fetchPendingUsers() {
+        const response = await api.get('/users?status=inActive');
+        return response.data;
+    },
+    async createUser(data: { name: string; gender: string; email: string; password: string; role: string; status?: string }) {
         const response = await api.post('/users', data);
         return response.data;
     },
-    async updateUser(id: number, data: { name?: string; gender?: string; email?: string; password?: string; role?: string }) {
+    async updateUser(id: number, data: { name?: string; gender?: string; email?: string; password?: string; role?: string; status?: string }) {
         const response = await api.put(`/users/${id}`, data);
         return response.data;
     },

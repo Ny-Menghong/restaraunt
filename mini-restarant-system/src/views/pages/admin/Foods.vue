@@ -31,9 +31,9 @@
                         :class="food.status ? 'badge-green' : 'badge-red'">
                         {{ food.status ? 'Active' : 'Inactive' }}
                     </span>
-                    <span class="absolute bottom-3 right-3 text-xs font-bold text-white drop-shadow">
+                    <!-- <span class="absolute bottom-3 right-3 text-xs font-bold text-white drop-shadow">
                         {{ food.quantity }} in stock
-                    </span>
+                    </span> -->
                 </div>
                 <!-- Content -->
                 <div class="p-4">
@@ -87,19 +87,38 @@
                             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="label">Price</label>
                             <input v-model.number="form.price" type="number" step="0.01" min="0" required class="input" />
                         </div>
-                        <div>
+                        <!-- <div>
                             <label class="label">Quantity</label>
                             <input v-model.number="form.quantity" type="number" min="0" class="input" />
-                        </div>
+                        </div> -->
                     </div>
                     <div>
-                        <label class="label">Image URL</label>
-                        <input v-model="form.image" type="text" placeholder="https://..." class="input" />
+                        <label class="label">Image</label>
+                        <div class="flex items-start gap-4">
+                            <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                <img v-if="imagePreview" :src="imagePreview" alt="Preview"
+                                    class="h-full w-full object-cover" />
+                                <div v-else class="flex h-full w-full items-center justify-center text-slate-300">
+                                    <ImageIcon class="h-6 w-6" />
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <label class="btn btn-soft w-full cursor-pointer px-4 py-2 text-center">
+                                    Choose image
+                                    <input type="file" accept="image/*" class="hidden" @change="onImageChange" />
+                                </label>
+                                <p v-if="imageFile" class="mt-1.5 truncate text-xs text-slate-500">{{ imageFile.name }}</p>
+                                <button v-if="imagePreview || form.image" type="button" @click="clearImage"
+                                    class="mt-1.5 text-xs font-medium text-red-500 hover:underline">
+                                    Remove image
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="label">Description</label>
@@ -126,7 +145,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { Plus, Pencil, Trash2, X, UtensilsCrossed } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, X, UtensilsCrossed, Image as ImageIcon } from 'lucide-vue-next';
 import { foodService } from '../../../services/foods';
 import { categoiyService } from '../../../services/categories';
 
@@ -137,7 +156,7 @@ interface Food {
     description: string;
     price: number;
     image: string;
-    quantity: number;
+    // quantity: number;
     status: boolean;
     category?: { id: number; name: string };
 }
@@ -154,21 +173,46 @@ const showModal = ref(false);
 const submitting = ref(false);
 const editingId = ref<number | null>(null);
 const error = ref('');
+const imageFile = ref<File | null>(null);
+const imagePreview = ref('');
+const removeImage = ref(false);
 
 const form = ref({
     name: '',
     category_id: null as number | null,
     price: 0,
-    quantity: 0,
+    // quantity: 0,
     image: '',
     description: '',
     status: true,
 });
 
+const onImageChange = (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    imageFile.value = file;
+    removeImage.value = false;
+    if (imagePreview.value) URL.revokeObjectURL(imagePreview.value);
+    imagePreview.value = URL.createObjectURL(file);
+};
+
+const clearImage = () => {
+    imageFile.value = null;
+    if (imagePreview.value) URL.revokeObjectURL(imagePreview.value);
+    imagePreview.value = '';
+    if (editingId.value) removeImage.value = true;
+};
+
 const resetForm = () => {
-    form.value = { name: '', category_id: null, price: 0, quantity: 0, image: '', description: '', status: true };
+    form.value = { name: '', category_id: null, price: 0, 
+    // quantity: 0, 
+    image: '', description: '', status: true };
     editingId.value = null;
     error.value = '';
+    imageFile.value = null;
+    imagePreview.value = '';
+    removeImage.value = false;
 };
 
 const openModal = (food?: Food) => {
@@ -179,11 +223,12 @@ const openModal = (food?: Food) => {
             name: food.name,
             category_id: food.category_id,
             price: food.price,
-            quantity: food.quantity,
+            // quantity: food.quantity,
             image: food.image || '',
             description: food.description || '',
             status: food.status,
         };
+        imagePreview.value = food.image || '';
     }
     showModal.value = true;
 };
@@ -208,13 +253,19 @@ const submitForm = async () => {
     submitting.value = true;
     error.value = '';
     try {
-        const payload: any = { ...form.value };
-        if (!payload.image) delete payload.image;
-        if (!payload.description) delete payload.description;
+        const formData = new FormData();
+        formData.append('name', form.value.name);
+        if (form.value.category_id !== null) formData.append('category_id', String(form.value.category_id));
+        formData.append('price', String(form.value.price));
+        // formData.append('quantity', String(form.value.quantity));
+        formData.append('status', form.value.status ? '1' : '0');
+        if (form.value.description) formData.append('description', form.value.description);
+        if (imageFile.value) formData.append('image', imageFile.value);
+        if (removeImage.value) formData.append('remove_image', '1');
         if (editingId.value) {
-            await foodService.updateFood(editingId.value, payload);
+            await foodService.updateFood(editingId.value, formData);
         } else {
-            await foodService.createFood(payload);
+            await foodService.createFood(formData);
         }
         showModal.value = false;
         await fetchData();

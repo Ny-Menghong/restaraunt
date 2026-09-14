@@ -5,12 +5,17 @@ export const foodService = {
         const response = await api.get('/foods');
         return response.data;
     },
-    async createFood(data: { category_id: number; name: string; image?: string; price: number; quantity?: number; description?: string; status?: boolean }) {
-        const response = await api.post('/foods', data);
+    async createFood(data: FormData) {
+        const response = await api.post('/foods', data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
     },
-    async updateFood(id: number, data: { category_id?: number; name?: string; image?: string; price?: number; quantity?: number; description?: string; status?: boolean }) {
-        const response = await api.put(`/foods/${id}`, data);
+    async updateFood(id: number, data: FormData) {
+        data.append('_method', 'PUT');
+        const response = await api.post(`/foods/${id}`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
     },
     async deleteFood(id: number) {

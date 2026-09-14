@@ -25,6 +25,7 @@
                             <th class="th">Gender</th>
                             <th class="th">Phone</th>
                             <th class="th">Role</th>
+                            <th class="th">Status</th>
                             <th class="th text-right">Actions</th>
                         </tr>
                     </thead>
@@ -45,6 +46,14 @@
                             <td class="td">{{ user.phone || '-' }}</td>
                             <td class="td">
                                 <span class="badge badge-emerald">{{ user.role || 'N/A' }}</span>
+                            </td>
+                            <td class="td">
+                                <select :value="user.status"
+                                    @change="changeStatus(user.id, ($event.target as HTMLSelectElement).value)"
+                                    class="input !w-auto !py-1 !text-xs capitalize">
+                                    <option value="active">active</option>
+                                    <option value="inActive">inActive</option>
+                                </select>
                             </td>
                             <td class="td">
                                 <div class="flex justify-end gap-2">
@@ -102,11 +111,20 @@
                             <input v-model="form.phone" type="text" class="input" />
                         </div>
                     </div>
-                    <div>
-                        <label class="label">Role</label>
-                        <select v-model="form.role" required class="input">
-                            <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label">Role</label>
+                            <select v-model="form.role" required class="input">
+                                <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label">Status</label>
+                            <select v-model="form.status" class="input">
+                                <option value="active">active</option>
+                                <option value="inActive">inActive</option>
+                            </select>
+                        </div>
                     </div>
                     <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
                     <div class="flex gap-3 pt-2">
@@ -134,6 +152,7 @@ interface User {
     gender: string;
     phone: string | null;
     role?: string;
+    status:string;
 }
 
 const users = ref<User[]>([]);
@@ -151,10 +170,11 @@ const form = ref({
     gender: 'male',
     phone: '',
     role: 'cashier',
+    status: 'active',
 });
 
 const resetForm = () => {
-    form.value = { name: '', email: '', password: '', gender: 'male', phone: '', role: 'cashier' };
+    form.value = { name: '', email: '', password: '', gender: 'male', phone: '', role: 'cashier', status: 'active' };
     editingId.value = null;
     error.value = '';
 };
@@ -180,6 +200,7 @@ const editUser = (user: User) => {
         gender: user.gender,
         phone: user.phone || '',
         role: user.role || 'cashier',
+        status: user.status || 'active',
     };
     showModal.value = true;
 };
@@ -194,6 +215,7 @@ const submitForm = async () => {
             gender: form.value.gender,
             phone: form.value.phone || undefined,
             role: form.value.role,
+            status: form.value.status,
         };
         if (form.value.password) {
             payload.password = form.value.password;
@@ -220,6 +242,15 @@ const deleteUser = async (id: number) => {
         await fetchUsers();
     } catch (e) {
         console.error('Failed to delete user:', e);
+    }
+};
+
+const changeStatus = async (id: number, status: string) => {
+    try {
+        await userService.updateUser(id, { status });
+        await fetchUsers();
+    } catch (e) {
+        console.error('Failed to change status:', e);
     }
 };
 

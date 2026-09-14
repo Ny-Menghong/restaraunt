@@ -3,8 +3,7 @@ export interface Report {
     total_orders: number;
     total_revenue: string;
     pending_orders: number;
-    completed_orders: number;
-    cancelled_orders: number;
+    confirmed_orders: number;
     average_order_value: string;
     orders_by_type: { dine_in: number; takeaway: number };
     daily_revenue: Record<string, number>;
