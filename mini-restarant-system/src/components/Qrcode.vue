@@ -6,19 +6,15 @@
         </div>
         <p class="qr-title">Scan to Order</p>
         <p class="qr-hint">Scan this QR code with your phone to view the menu</p>
-        
     </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import QRCode from 'qrcode'
 import type { Table } from '../models/table'
-
 const props = defineProps<{
     table: Table
 }>()
-
 const qrImage = ref('')
 const url = "http://localhost:5173";
 // const url = "https://insurance-councils-surge-plays.trycloudflare.com";
@@ -29,7 +25,6 @@ onMounted(async () => {
     )
 })
 </script>
-
 <style lang="css" scoped>
 .qr-card {
     text-align: center;

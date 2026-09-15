@@ -88,11 +88,11 @@ const handleLogout = async () => {
 
             <!-- Logo -->
             <div class="relative flex h-20 items-center gap-3 border-b border-slate-100 px-6">
-                <img width="50" src="https://www.clipartmax.com/png/full/258-2589171_free-high-quality-naruto-icon-image-konoha-symbol.png" alt="">
-                <!-- <div
+                <!-- <img width="50" src="https://www.clipartmax.com/png/full/258-2589171_free-high-quality-naruto-icon-image-konoha-symbol.png" alt=""> -->
+                <div
                     class="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30">
                     <ChefHat class="h-6 w-6" />
-                </div> -->
+                </div>
                 <div class="min-w-0">
                     <p class="text-base font-extrabold tracking-tight text-slate-900">Konoha</p>
                     <p class="truncate text-[11px] font-medium text-slate-400">Restaurant Management</p>
@@ -205,7 +205,6 @@ const handleLogout = async () => {
                     <Pencil class="h-3.5 w-3.5 shrink-0 text-slate-300" />
                 </RouterLink>
             </div>
-                
                 <button @click="handleLogout"
                     class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-semibold text-slate-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600">
                     <LogOut class="h-[18px] w-[18px] text-slate-400 transition-colors group-hover:text-red-500" />
