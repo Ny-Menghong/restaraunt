@@ -24,6 +24,7 @@ onMounted(async () => {
         `${url}/menu/${props.table.qr_token}`
     )
 })
+
 </script>
 <style lang="css" scoped>
 .qr-card {
@@ -33,7 +34,6 @@ onMounted(async () => {
     background: linear-gradient(180deg, #fafbfc 0%, #f1f5f9 100%);
     border: 1px dashed #d7dde6;
 }
-
 .qr-box {
     width: 170px;
     height: 170px;
